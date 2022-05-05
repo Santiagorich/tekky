@@ -22,7 +22,7 @@ module.exports = allowCors(async(req, res) => {
     const encodedquery = encodeURIComponent(req.query.query);
     var config = {
         method: 'post',
-        url: `https://tekky.vercel.app/api/generator/querifySpec?url=${encodedurl}&prod=${encodedprod}`,
+        url: `http://tekky.vercel.app/api/generator/querifySpec?url=${encodedurl}&prod=${encodedprod}`,
         headers: {}
     };
     let jsonres = await axios(config);
@@ -31,7 +31,7 @@ module.exports = allowCors(async(req, res) => {
     console.log(selobj);
     var config = {
         method: 'post',
-        url: `https://tekky.vercel.app/api/generator/getter?url=${encodeURIComponent(selobj["queryableurl"])}&query=${encodedquery}&contsel=${selobj["contsel"]}&namesel=${selobj["namesel"]}&pricesel=${selobj["pricesel"]}&imgsel=${selobj["imgsel"]}`,
+        url: `http://tekky.vercel.app/api/generator/getter?url=${encodeURIComponent(selobj["queryableurl"])}&query=${encodedquery}&contsel=${selobj["contsel"]}&namesel=${selobj["namesel"]}&pricesel=${selobj["pricesel"]}&imgsel=${selobj["imgsel"]}`,
         headers: {}
     };
     if (req.query.query) {
