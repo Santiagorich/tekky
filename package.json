@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "axios": "^0.27.2",
     "crypto-js": "^4.1.1",
     "firebase": "^9.7.0",
     "jsdom": "^19.0.0",
