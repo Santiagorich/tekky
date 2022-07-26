@@ -15,14 +15,15 @@ const allowCors = (fn) => async(req, res) => {
 
 module.exports = allowCors(async(req, res) => {
     if (!req.query.url.includes('http')) {
-        req.query.url = `http://${req.query.url}`;
+        req.query.url = `http://${req.query.url.trim()}`;
     }
     const encodedurl = encodeURIComponent(req.query.url);
     const encodedprod = encodeURIComponent(req.query.prod);
     const encodedquery = encodeURIComponent(req.query.query);
+    console.log(encodedurl);
     var config = {
         method: 'post',
-        url: `http://tekky.vercel.app/api/generator/querifySpec?url=${encodedurl}&prod=${encodedprod}`,
+        url: `http://${process.env.host}/api/generator/querifySpec?url=${encodedurl}&prod=${encodedprod}`,
         headers: {}
     };
     let jsonres = await axios(config);
@@ -31,7 +32,7 @@ module.exports = allowCors(async(req, res) => {
     console.log(selobj);
     var config = {
         method: 'post',
-        url: `http://tekky.vercel.app/api/generator/getter?url=${encodeURIComponent(selobj["queryableurl"])}&query=${encodedquery}&contsel=${selobj["contsel"]}&namesel=${selobj["namesel"]}&pricesel=${selobj["pricesel"]}&imgsel=${selobj["imgsel"]}`,
+        url: `http://${process.env.host}/api/generator/getter?url=${encodeURIComponent(selobj["queryableurl"])}&query=${encodedquery}&contsel=${selobj["contsel"]}&namesel=${selobj["namesel"]}&pricesel=${selobj["pricesel"]}&imgsel=${selobj["imgsel"]}&nextsel=${selobj["nextsel"]}`,
         headers: {}
     };
     if (req.query.query) {

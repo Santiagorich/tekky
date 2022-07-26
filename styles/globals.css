@@ -25,6 +25,13 @@
     .greensig {
         background-color: #7dde92;
     }
+    .bg-honey {
+        background-color: #F6AE2D;
+        color: white;
+    }
+    .max-itemlist {
+        height: calc(100%-10%);
+    }
     body {
         background-color: #ededed;
     }

@@ -1,19 +1,8 @@
-import React,{ useEffect,useState } from 'react'
+import React from 'react'
 
 
 
-function Location() {
-
-    const [location,setLocation] = useState({})
-
-        useEffect(() => {
-            navigator.geolocation.getCurrentPosition(position => {
-                setLocation({
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                })
-            })
-        },[])
+function Location({location}) {
     return (
     <div className='flex gap-2'>
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

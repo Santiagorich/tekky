@@ -1,27 +1,13 @@
 import { getApps, initializeApp } from "firebase/app";
 import { addDoc, collection, getDocs, getFirestore, query, where } from 'firebase/firestore';
 import AES from 'crypto-js/aes';
+import { app } from './utils/firebase';
 
-const firequery = query;
-const firebaseConfig = {
-    apiKey: "AIzaSyBvnhh1tfalJo2a4llWcRKq4u8-zuoDP80",
-    authDomain: "tekky-dd9c7.firebaseapp.com",
-    projectId: "tekky-dd9c7",
-    storageBucket: "tekky-dd9c7.appspot.com",
-    messagingSenderId: "687067575293",
-    appId: "1:687067575293:web:a9539014646e6634c7df94",
-    measurementId: "G-CP91C3HKYZ"
-};
-
-
-if (getApps().length === 0) {
-    initializeApp(firebaseConfig);
-}
-
-const db = getFirestore();
+const db = getFirestore(app);
 
 const axios = require("axios");
 const jsdom = require("jsdom");
+const letterin = /[a-zA-Z]/g;
 
 const allowCors = (fn) => async(req, res) => {
     res.setHeader("Access-Control-Allow-Credentials", true);
@@ -122,6 +108,7 @@ function getImageElement(nameel) {
 function getNameElement(document, prod) {
     let maxlength = document.body.innerHTML.length;
     let nameel = null;
+    console.log(prod);
     for (let item of document.querySelectorAll('*')) {
         if (item.textContent) {
             if (item.textContent.toLowerCase().includes(prod.toLowerCase()) && item.innerHTML.length < maxlength) {
@@ -167,6 +154,22 @@ function getPriceElement(document, nameel) {
     };
 }
 
+function getNextPageElement(document, query, url) {
+    let nextpageel;
+    let nextpage = new RegExp("(&[A-z].*=(1|2)(&|$))");
+    for (let item of document.querySelectorAll('*')) {
+        if (item.href != undefined && item.href.length - url.href.length <= 30 && item.href.includes(query) && !item.href.includes('javascript:') && !letterin.test(item.textContent)) {
+            nextpageel = item;
+
+        }
+    }
+    return {
+        name: "NextPage",
+        element: nextpageel,
+        selector: (nextpageel) ? generateContSelector(nextpageel) : '',
+    };
+}
+
 function getSelectors(document, prod, url) {
     let name = getNameElement(document, prod);
     let price = getPriceElement(document, name.element);
@@ -176,12 +179,14 @@ function getSelectors(document, prod, url) {
     price.selector = generateSelector(price.element, container.element);
     image.selector = generateSelector(image.element, container.element);
     let queryobj = findQueryinurl(document, container.selector, name.selector, url);
+    let next = getNextPageElement(document, queryobj.query, url);
 
     return {
         contsel: container.selector,
         namesel: name.selector,
         pricesel: price.selector,
         imgsel: image.selector,
+        nextsel: next.selector,
         query: queryobj.query,
         queryableurl: queryobj.queryableurl,
     }
@@ -189,25 +194,28 @@ function getSelectors(document, prod, url) {
 
 function findQueryinurl(document, contsel, namesel, url) {
     let query = "";
-    let urlstr = url.href.replace(url.hostname, "");
+    let urlstr = url.href.replace(url.origin, "");
+    console.log(urlstr)
     for (let cont of document.querySelectorAll(contsel)) {
         let item = cont.querySelector(namesel);
-        console.log(item.innerHTML);
-        let nametext = item.textContent.trim();
-        console.log(nametext);
-        let nameparts = nametext.split(/[^a-zA-Z0-9]/);
-        console.log(nameparts);
-        for (let part of nameparts) {
-            if (part != "") {
-                if (Object.values(url.searchParams).includes(part.toLowerCase())) {
-                    console.log("Found in queries: " + part.toLowerCase());
-                    query = part.toLowerCase();
-                    break;
-                }
-                if (urlstr.toLowerCase().includes(part.toLowerCase()) && query == "") {
-                    console.log("Found in url: " + part.toLowerCase());
-                    query = part.toLowerCase();
-                    break;
+        if (item && item.innerHTML) {
+            console.log(item.innerHTML);
+            let nametext = item.textContent.trim();
+            console.log(nametext);
+            let nameparts = nametext.split(/[^a-zA-Z0-9]/);
+            console.log(nameparts);
+            for (let part of nameparts) {
+                if (part != "" && part.length > 2) {
+                    if (Object.values(url.searchParams).includes(part.toLowerCase())) {
+                        console.log("Found in queries: " + part.toLowerCase());
+                        query = part.toLowerCase();
+                        break;
+                    }
+                    if (urlstr.toLowerCase().includes(part.toLowerCase()) && query == "") {
+                        console.log("Found in url: " + part.toLowerCase());
+                        query = part.toLowerCase();
+                        break;
+                    }
                 }
             }
         }
@@ -228,9 +236,10 @@ module.exports = allowCors(async(req, res) => {
     console.log("Querifying: " + req.query.url);
     let snapshot = await getDocs(firequery(collection(db, 'stores'), where("storename", "==", url.hostname)))
     if (snapshot.docs.length == 0) {
+        console.log(req.query.url)
         var response = await axios.get(req.query.url, {
             headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
+                'User-Agent': process.env.UA
             }
         }).then(function(res) {
             let doc = new jsdom.JSDOM(res.data).window.document;
@@ -241,10 +250,12 @@ module.exports = allowCors(async(req, res) => {
             id: makeid(10),
             storename: url.hostname,
             queryableurl: response.queryableurl,
+            query: response.query,
             contsel: response.contsel,
             namesel: response.namesel,
             pricesel: response.pricesel,
-            imgsel: response.imgsel
+            imgsel: response.imgsel,
+            nextsel: response.nextsel,
         }
         addDoc(collection(db, 'stores'), newdoc);
         let encrypted = AES.encrypt(JSON.stringify(newdoc), process.env.SECRET)
